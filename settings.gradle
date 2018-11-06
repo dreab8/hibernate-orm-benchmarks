@@ -1,7 +1,8 @@
-rootProject.name = 'benchmarks'
+rootProject.name = 'orm-benchmark'
 
-include 'orm5'
-include 'orm6'
-include 'processor'
-
-
+rootProject.children.each { project ->
+	project.buildFileName = "${project.name}.gradle"
+	assert project.projectDir.isDirectory()
+	assert project.buildFile.exists()
+	assert project.buildFile.isFile()
+}

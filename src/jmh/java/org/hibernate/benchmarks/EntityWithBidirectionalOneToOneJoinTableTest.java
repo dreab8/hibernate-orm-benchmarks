@@ -13,7 +13,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.hibernate.benchmarks.BaseBenchmarkState;
+import org.hibernate.benchmarks.common.BenchmarkState;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
@@ -32,27 +32,31 @@ public class EntityWithBidirectionalOneToOneJoinTableTest {
 	}
 
 	@State(Scope.Benchmark)
-	public static class LocalBenchmarkState extends BaseBenchmarkState {
+	public static class LocalBenchmarkState extends BenchmarkState {
 
 		@Override
 		protected void populateDatabase() {
-			inTransaction( entityManager -> {
-				Parent parent = new Parent( 1, "Hibernate" );
-				Child child = new Child( 2, "Acme", parent );
-				Child2 child2 = new Child2( 3, "Fab", parent );
-				entityManager.persist( parent );
-				entityManager.persist( child );
-				entityManager.persist( child2 );
-			} );
+			inTransaction(
+					entityManager -> {
+						Parent parent = new Parent( 1, "Hibernate" );
+						Child child = new Child( 2, "Acme", parent );
+						Child2 child2 = new Child2( 3, "Fab", parent );
+						entityManager.persist( parent );
+						entityManager.persist( child );
+						entityManager.persist( child2 );
+					}
+			);
 		}
 
 		@Override
 		protected void cleanUpDatabase() {
-			inTransaction( entityManager -> {
-				entityManager.createQuery( "delete from Parent" ).executeUpdate();
-				entityManager.createQuery( "delete from Child" ).executeUpdate();
-				entityManager.createQuery( "delete from Child2" ).executeUpdate();
-			} );
+			inTransaction(
+					entityManager -> {
+						entityManager.createQuery( "delete from Parent" ).executeUpdate();
+						entityManager.createQuery( "delete from Child" ).executeUpdate();
+						entityManager.createQuery( "delete from Child2" ).executeUpdate();
+					}
+			);
 		}
 
 		@Override
