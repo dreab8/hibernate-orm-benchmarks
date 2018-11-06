@@ -1,3 +1,5 @@
+apply from: rootProject.file( 'gradle/benchmark-module.gradle' )
+
 buildscript {
 	repositories {
 		mavenCentral()
@@ -10,6 +12,17 @@ buildscript {
 	}
 	dependencies {
 		classpath 'me.champeau.gradle:jmh-gradle-plugin:0.4.7'
+	}
+}
+
+if ( project.hasProperty( 'orm5' ) ) {
+	ext {
+		ormVersion = 'orm5'
+	}
+}
+else {
+	ext {
+		ormVersion = 'orm6'
 	}
 }
 
@@ -33,7 +46,67 @@ allprojects {
 	}
 }
 
-task wrapper( type: Wrapper ) {
-	gradleVersion = '4.10.2'
-	distributionType = 'ALL'
+sourceSets {
+	orm6 {
+		java {
+			srcDir 'src/orm6/java'
+			outputDir = main.java.outputDir
+		}
+		compileClasspath += main.runtimeClasspath
+		runtimeClasspath += main.runtimeClasspath
+	}
+	orm5 {
+		java {
+			srcDir 'src/orm5/java'
+			outputDir = main.java.outputDir
+		}
+		compileClasspath += main.runtimeClasspath
+		runtimeClasspath += main.runtimeClasspath
+	}
+	main {
+		java {
+			srcDir 'src/main/java'
+		}
+		resources {
+			srcDir 'src/main/resources'
+		}
+	}
+}
+
+dependencies {
+	compile 'org.openjdk.jmh:jmh-core:1.21'
+	if ( ormVersion.equals( 'orm5' ) ) {
+		compile libraries.orm5
+	}
+	else {
+		compile libraries.orm6
+	}
+	compile 'javax.persistence:javax.persistence-api:2.2'
+	compile libraries.logging
+	compile libraries.h2
+
+	orm5Compile libraries.orm5
+	orm6Compile libraries.orm6
+}
+
+if ( ormVersion == 'orm5' ) {
+	tasks.compileJava.finalizedBy compileOrm5Java
+}
+else {
+	tasks.compileJava.finalizedBy compileOrm6Java
+}
+
+
+def formattedDate = new Date().format( 'yyyy-MM-dd-HHmmss' )
+
+jmh {
+//	include = ['some regular expression'] // include pattern (regular expression) for benchmarks to be executed
+//	exclude = ['some regular expression'] // exclude pattern (regular expression) for benchmarks to be executed
+	benchmarkMode = ['thrpt'] // Benchmark mode. Available modes are: [Throughput/thrpt, AverageTime/avgt, SampleTime/sample, SingleShotTime/ss, All/all]
+	iterations = 20 //default 10
+	fork = 2 //default 10
+	warmupIterations = 20 // Number of warmup iterations to do.
+	
+	humanOutputFile = project.file( "reports/jmh/${ormVersion}_human_${formattedDate}.txt" ) // human-readable output file
+	resultsFile = project.file( "reports/jmh/${ormVersion}_results_${formattedDate}.txt" )// results file
 }
